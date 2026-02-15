@@ -13,11 +13,22 @@
  */
 
 import { createLogger } from '@shared/utils/logger';
-import { type BrowserWindow, Notification } from 'electron';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+
+// Conditional Electron imports — allows running without Electron (standalone web server)
+let ElectronNotification: typeof import('electron').Notification | null = null;
+type BrowserWindow = import('electron').BrowserWindow;
+
+try {
+  // Dynamic require — will fail gracefully in non-Electron environments
+  const electron = require('electron');
+  ElectronNotification = electron.Notification;
+} catch {
+  // Not running in Electron — native notifications unavailable
+}
 
 import { type DetectedError } from '../error/ErrorMessageBuilder';
 
@@ -77,7 +88,8 @@ const MAX_NOTIFICATIONS = 100;
 const THROTTLE_MS = 5000;
 
 /** Path to notifications storage file */
-const NOTIFICATIONS_PATH = path.join(os.homedir(), '.claude', 'claude-devtools-notifications.json');
+const NOTIFICATIONS_DIR = process.env.NOTIFICATIONS_DIR ?? path.join(os.homedir(), '.claude');
+const NOTIFICATIONS_PATH = path.join(NOTIFICATIONS_DIR, 'claude-devtools-notifications.json');
 
 // =============================================================================
 // NotificationManager Class
@@ -87,7 +99,7 @@ export class NotificationManager extends EventEmitter {
   private static instance: NotificationManager | null = null;
   private notifications: StoredNotification[] = [];
   private configManager: ConfigManager;
-  private mainWindow: BrowserWindow | null = null;
+  private mainWindow: unknown = null;
   private throttleMap = new Map<string, number>();
   private isInitialized: boolean = false;
 
@@ -148,7 +160,7 @@ export class NotificationManager extends EventEmitter {
   /**
    * Sets the main window reference for sending IPC events.
    */
-  setMainWindow(window: BrowserWindow | null): void {
+  setMainWindow(window: unknown): void {
     this.mainWindow = window;
   }
 
@@ -373,15 +385,14 @@ export class NotificationManager extends EventEmitter {
    * Shows a native macOS notification for an error.
    */
   private showNativeNotification(error: DetectedError): void {
-    // Check if Notification is supported
-    if (!Notification.isSupported()) {
-      logger.warn('Native notifications not supported');
+    if (!ElectronNotification || !ElectronNotification.isSupported()) {
+      logger.info('Native notifications not available (non-Electron environment)');
       return;
     }
 
     const config = this.configManager.getConfig();
 
-    const notification = new Notification({
+    const notification = new ElectronNotification({
       title: 'Claude Code Error',
       subtitle: error.context.projectName,
       body: error.message.slice(0, 200),
@@ -389,16 +400,11 @@ export class NotificationManager extends EventEmitter {
     });
 
     notification.on('click', () => {
-      // Focus app window
-      if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-        this.mainWindow.show();
-        this.mainWindow.focus();
-
-        // Send deep link to renderer
-        this.mainWindow.webContents.send('notification:clicked', error);
+      if (this.mainWindow && !(this.mainWindow as any).isDestroyed()) {
+        (this.mainWindow as any).show();
+        (this.mainWindow as any).focus();
+        (this.mainWindow as any).webContents.send('notification:clicked', error);
       }
-
-      // Emit event for other listeners
       this.emit('notification-clicked', error);
     });
 
@@ -413,10 +419,10 @@ export class NotificationManager extends EventEmitter {
    * Emits a notification:new event to the renderer.
    */
   private emitNewNotification(notification: StoredNotification): void {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send('notification:new', notification);
+    const win = this.mainWindow as any;
+    if (win && !win.isDestroyed?.()) {
+      win.webContents?.send('notification:new', notification);
     }
-
     this.emit('notification-new', notification);
   }
 
@@ -424,13 +430,13 @@ export class NotificationManager extends EventEmitter {
    * Emits a notification:updated event to the renderer.
    */
   private emitNotificationUpdated(): void {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send('notification:updated', {
+    const win = this.mainWindow as any;
+    if (win && !win.isDestroyed?.()) {
+      win.webContents?.send('notification:updated', {
         total: this.notifications.length,
         unreadCount: this.getUnreadCountSync(),
       });
     }
-
     this.emit('notification-updated', {
       total: this.notifications.length,
       unreadCount: this.getUnreadCountSync(),

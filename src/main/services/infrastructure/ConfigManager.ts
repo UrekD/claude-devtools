@@ -23,7 +23,7 @@ import type { SshConnectionProfile } from '@shared/types/api';
 
 const logger = createLogger('Service:ConfigManager');
 
-const CONFIG_DIR = path.join(os.homedir(), '.claude');
+const CONFIG_DIR = process.env.CONFIG_DIR ?? path.join(os.homedir(), '.claude');
 const CONFIG_FILENAME = 'claude-devtools-config.json';
 const DEFAULT_CONFIG_PATH = path.join(CONFIG_DIR, CONFIG_FILENAME);
 

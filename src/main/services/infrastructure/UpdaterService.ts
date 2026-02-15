@@ -3,40 +3,44 @@
  *
  * Forwards update lifecycle events to the renderer via IPC.
  * Auto-download is disabled so users must confirm before downloading.
+ *
+ * When running outside Electron (standalone web server), all methods are no-ops.
  */
 
 import { getErrorMessage } from '@shared/utils/errorHandling';
 import { createLogger } from '@shared/utils/logger';
-import electronUpdater from 'electron-updater';
-
-const { autoUpdater } = electronUpdater;
 
 import type { UpdaterStatus } from '@shared/types';
-import type { BrowserWindow } from 'electron';
 
 const logger = createLogger('UpdaterService');
 
+// Conditional import — electron-updater is only available in Electron builds
+let autoUpdater: import('electron-updater').AppUpdater | null = null;
+
+try {
+  const electronUpdater = require('electron-updater');
+  autoUpdater = electronUpdater.autoUpdater;
+} catch {
+  logger.info('electron-updater not available — update checks disabled');
+}
+
 export class UpdaterService {
-  private mainWindow: BrowserWindow | null = null;
+  private mainWindow: unknown = null;
 
   constructor() {
-    autoUpdater.autoDownload = false;
-    autoUpdater.autoInstallOnAppQuit = true;
-
-    this.bindEvents();
+    if (autoUpdater) {
+      autoUpdater.autoDownload = false;
+      autoUpdater.autoInstallOnAppQuit = true;
+      this.bindEvents();
+    }
   }
 
-  /**
-   * Set the main window reference for sending status events.
-   */
-  setMainWindow(window: BrowserWindow | null): void {
+  setMainWindow(window: unknown): void {
     this.mainWindow = window;
   }
 
-  /**
-   * Check for available updates.
-   */
   async checkForUpdates(): Promise<void> {
+    if (!autoUpdater) return;
     try {
       await autoUpdater.checkForUpdates();
     } catch (error) {
@@ -44,10 +48,8 @@ export class UpdaterService {
     }
   }
 
-  /**
-   * Download the available update.
-   */
   async downloadUpdate(): Promise<void> {
+    if (!autoUpdater) return;
     try {
       await autoUpdater.downloadUpdate();
     } catch (error) {
@@ -55,22 +57,21 @@ export class UpdaterService {
     }
   }
 
-  /**
-   * Quit the app and install the downloaded update.
-   * On Windows (NSIS): isSilent=true runs the installer with /S (no wizard);
-   * isForceRunAfter=true launches the app after install. Other platforms ignore these.
-   */
   quitAndInstall(): void {
+    if (!autoUpdater) return;
     autoUpdater.quitAndInstall(true, true);
   }
 
   private sendStatus(status: UpdaterStatus): void {
-    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-      this.mainWindow.webContents.send('updater:status', status);
+    const win = this.mainWindow as any;
+    if (win && !win.isDestroyed?.()) {
+      win.webContents?.send('updater:status', status);
     }
   }
 
   private bindEvents(): void {
+    if (!autoUpdater) return;
+
     autoUpdater.on('checking-for-update', () => {
       logger.info('Checking for update...');
       this.sendStatus({ type: 'checking' });

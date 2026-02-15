@@ -11,8 +11,17 @@
 import { encodePath, getClaudeBasePath } from '@main/utils/pathDecoder';
 import { countTokens } from '@main/utils/tokenizer';
 import { createLogger } from '@shared/utils/logger';
-import { app } from 'electron';
+import * as os from 'os';
 import * as path from 'path';
+
+// Conditional Electron import — falls back to os.homedir() in non-Electron environments
+let electronApp: { getPath: (name: string) => string } | null = null;
+try {
+  const electron = require('electron');
+  electronApp = electron.app;
+} catch {
+  // Not running in Electron
+}
 
 import { LocalFileSystemProvider } from '../infrastructure/LocalFileSystemProvider';
 
@@ -48,7 +57,7 @@ export interface ClaudeMdReadResult {
  */
 function expandTilde(filePath: string): string {
   if (filePath.startsWith('~')) {
-    const homeDir = app.getPath('home');
+    const homeDir = electronApp?.getPath('home') ?? os.homedir();
     return path.join(homeDir, filePath.slice(1));
   }
   return filePath;
