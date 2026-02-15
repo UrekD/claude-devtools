@@ -78,4 +78,4 @@ EXPOSE 3456
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://localhost:3456/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
-CMD ["npx", "tsx", "src/main/server.ts"]
+CMD ["node_modules/.bin/tsx", "src/main/server.ts"]
