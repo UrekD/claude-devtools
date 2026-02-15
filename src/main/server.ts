@@ -29,7 +29,11 @@ import { createLogger } from '@shared/utils/logger';
 import Fastify from 'fastify';
 import { existsSync } from 'fs';
 import { homedir } from 'os';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const logger = createLogger('Server');
 
