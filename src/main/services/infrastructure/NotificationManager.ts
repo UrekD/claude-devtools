@@ -12,6 +12,7 @@
  * - Emit IPC events to renderer: notification:new, notification:updated
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- Electron types unavailable in web build, conditional imports use any */
 import { createLogger } from '@shared/utils/logger';
 import { EventEmitter } from 'events';
 import * as fs from 'fs';
@@ -19,11 +20,10 @@ import * as os from 'os';
 import * as path from 'path';
 
 // Conditional Electron imports — allows running without Electron (standalone web server)
-let ElectronNotification: typeof import('electron').Notification | null = null;
-type BrowserWindow = import('electron').BrowserWindow;
+let ElectronNotification: any = null;
 
 try {
-  // Dynamic require — will fail gracefully in non-Electron environments
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- intentional conditional require
   const electron = require('electron');
   ElectronNotification = electron.Notification;
 } catch {
@@ -385,7 +385,7 @@ export class NotificationManager extends EventEmitter {
    * Shows a native macOS notification for an error.
    */
   private showNativeNotification(error: DetectedError): void {
-    if (!ElectronNotification || !ElectronNotification.isSupported()) {
+    if (!ElectronNotification?.isSupported()) {
       logger.info('Native notifications not available (non-Electron environment)');
       return;
     }
@@ -657,3 +657,4 @@ export class NotificationManager extends EventEmitter {
     };
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- re-enable after conditional Electron imports */

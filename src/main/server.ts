@@ -18,7 +18,6 @@ import fastifyStatic from '@fastify/static';
 import { registerHttpRoutes } from '@main/http';
 import { broadcastEvent } from '@main/http/events';
 import {
-  configManager,
   LocalFileSystemProvider,
   NotificationManager,
   ServiceContext,
@@ -32,8 +31,8 @@ import { homedir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// eslint-disable-next-line @typescript-eslint/naming-convention -- ESM __dirname shim
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const logger = createLogger('Server');
 
@@ -186,7 +185,7 @@ async function main(): Promise<void> {
   }
 
   // Graceful shutdown
-  const shutdown = async () => {
+  const shutdown = async (): Promise<void> => {
     logger.info('Shutting down...');
     serviceContext.dispose();
     sshConnectionManager.dispose();

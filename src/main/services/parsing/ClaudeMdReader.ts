@@ -17,7 +17,9 @@ import * as path from 'path';
 // Conditional Electron import — falls back to os.homedir() in non-Electron environments
 let electronApp: { getPath: (name: string) => string } | null = null;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment -- intentional conditional require
   const electron = require('electron');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- conditional Electron access
   electronApp = electron.app;
 } catch {
   // Not running in Electron

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-require-imports -- electron-updater types unavailable in web build, all autoUpdater usage is conditional */
 /**
  * UpdaterService - Wraps electron-updater's autoUpdater for OTA updates.
  *
@@ -15,7 +16,7 @@ import type { UpdaterStatus } from '@shared/types';
 const logger = createLogger('UpdaterService');
 
 // Conditional import — electron-updater is only available in Electron builds
-let autoUpdater: import('electron-updater').AppUpdater | null = null;
+let autoUpdater: any = null;
 
 try {
   const electronUpdater = require('electron-updater');
@@ -77,7 +78,7 @@ export class UpdaterService {
       this.sendStatus({ type: 'checking' });
     });
 
-    autoUpdater.on('update-available', (info) => {
+    autoUpdater.on('update-available', (info: any) => {
       logger.info('Update available:', info.version);
       this.sendStatus({
         type: 'available',
@@ -91,7 +92,7 @@ export class UpdaterService {
       this.sendStatus({ type: 'not-available' });
     });
 
-    autoUpdater.on('download-progress', (progress) => {
+    autoUpdater.on('download-progress', (progress: any) => {
       this.sendStatus({
         type: 'downloading',
         progress: {
@@ -102,7 +103,7 @@ export class UpdaterService {
       });
     });
 
-    autoUpdater.on('update-downloaded', (info) => {
+    autoUpdater.on('update-downloaded', (info: any) => {
       logger.info('Update downloaded:', info.version);
       this.sendStatus({
         type: 'downloaded',
@@ -110,7 +111,7 @@ export class UpdaterService {
       });
     });
 
-    autoUpdater.on('error', (error) => {
+    autoUpdater.on('error', (error: any) => {
       logger.error('Updater error:', getErrorMessage(error));
       this.sendStatus({
         type: 'error',
@@ -119,3 +120,4 @@ export class UpdaterService {
     });
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-require-imports -- re-enable after conditional electron-updater imports */

@@ -26,6 +26,10 @@ export default defineConfig([
     '*.config.cjs',
     '*.config.ts',
     'out/**',
+    // Electron-only files (not used in standalone web server)
+    'src/main/index.ts',
+    'src/main/ipc/**',
+    'src/preload/**',
   ]),
 
   // Base ESLint recommended rules
