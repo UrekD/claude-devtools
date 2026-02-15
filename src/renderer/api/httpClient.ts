@@ -48,8 +48,14 @@ export class HttpAPIClient implements ElectronAPI {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- event callbacks have varying signatures
   private eventListeners = new Map<string, Set<(...args: any[]) => void>>();
 
-  constructor(port: number) {
-    this.baseUrl = `http://127.0.0.1:${port}`;
+  constructor(port?: number) {
+    // When port is undefined or matches current origin, use same-origin relative URLs.
+    // This enables Docker/reverse-proxy deployments where API and UI share the same origin.
+    if (port === undefined || `${port}` === window.location.port) {
+      this.baseUrl = '';
+    } else {
+      this.baseUrl = `http://127.0.0.1:${port}`;
+    }
     this.initEventSource();
   }
 

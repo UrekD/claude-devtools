@@ -16,9 +16,10 @@ import { HttpAPIClient } from './httpClient';
 
 import type { ElectronAPI } from '@shared/types/api';
 
-function getHttpPort(): number {
+function getHttpPort(): number | undefined {
   const params = new URLSearchParams(window.location.search);
-  return parseInt(params.get('port') ?? '3456', 10);
+  const portParam = params.get('port');
+  return portParam ? parseInt(portParam, 10) : undefined;
 }
 
 let httpClient: HttpAPIClient | null = null;
