@@ -1,0 +1,15 @@
+services:
+  claude-devtools:
+    build: .
+    ports:
+      - "3456:3456"
+    volumes:
+      # Mount Claude Code session data as read-only
+      - ~/.claude:/home/node/.claude:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3456
+      - HOST=0.0.0.0
+      # Override CLAUDE_ROOT if your .claude is in a different location
+      # - CLAUDE_ROOT=/home/node/.claude
+    restart: unless-stopped

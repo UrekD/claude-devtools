@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-electron
+release
+out
+.git
+.github
+*.md
+test
